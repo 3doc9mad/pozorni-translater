@@ -1,0 +1,27 @@
+{
+    "tts": {
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker_wav": "input_voices/neco-arc-1.wav",
+        "speed": 0.6,
+        "use_gpu": false,
+        "gpu_accelerator": "cuda:0"
+    },
+    "audio": {
+        "input_device_index": 1,
+        "output_device_index": 1,
+        "sample_rate": 44100,
+        "chunk_size": 64
+    },
+    "recording": {
+        "record_seconds": 3,
+        "wav_output_filename": "output"
+    },
+    "translation": {
+        "source_language": "ru",
+        "destination_language": "en"
+    },
+    "interface": {
+        "multiprocessing": false,
+        "debug_mode": false
+    }
+}

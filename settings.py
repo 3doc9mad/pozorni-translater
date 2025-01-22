@@ -1,87 +1,118 @@
+import json
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, messagebox
 
-class SettingsWindow(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Настройки")
-        self.geometry("400x300")
+import pyaudio
 
-        # Входное устройство
-        self.input_device_label = ttk.Label(self, text="Входное устройство:")
-        self.input_device_label.pack(pady=5)
-        self.input_device_var = tk.StringVar()
-        self.input_device_combobox = ttk.Combobox(self, textvariable=self.input_device_var)
-        self.input_device_combobox['values'] = self.get_audio_devices()
-        self.input_device_combobox.pack(pady=5)
 
-        # Выходное устройство
-        self.output_device_label = ttk.Label(self, text="Выходное устройство:")
-        self.output_device_label.pack(pady=5)
-        self.output_device_var = tk.StringVar()
-        self.output_device_combobox = ttk.Combobox(self, textvariable=self.output_device_var)
-        self.output_device_combobox['values'] = self.get_audio_devices()
-        self.output_device_combobox.pack(pady=5)
+# Функция для загрузки конфигурации
+def load_config():
+    with open('config.json', 'r') as config_file:
+        return json.load(config_file)
 
-        # Язык ввода
-        self.input_language_label = ttk.Label(self, text="Язык ввода:")
-        self.input_language_label.pack(pady=5)
-        self.input_language_var = tk.StringVar()
-        self.input_language_combobox = ttk.Combobox(self, textvariable=self.input_language_var)
-        self.input_language_combobox['values'] = self.get_languages()
-        self.input_language_combobox.pack(pady=5)
 
-        # Язык вывода
-        self.output_language_label = ttk.Label(self, text="Язык вывода:")
-        self.output_language_label.pack(pady=5)
-        self.output_language_var = tk.StringVar()
-        self.output_language_combobox = ttk.Combobox(self, textvariable=self.output_language_var)
-        self.output_language_combobox['values'] = self.get_languages()
-        self.output_language_combobox.pack(pady=5)
+# Функция для сохранения конфигурации
+def save_config(config):
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file, indent=4)
 
-        # Файл для синтеза голоса
-        self.voice_file_label = ttk.Label(self, text="Файл для синтеза голоса:")
-        self.voice_file_label.pack(pady=5)
-        self.voice_file_var = tk.StringVar()
-        self.voice_file_entry = ttk.Entry(self, textvariable=self.voice_file_var, width=40)
-        self.voice_file_entry.pack(pady=5)
-        self.browse_button = ttk.Button(self, text="Обзор...", command=self.browse_file)
-        self.browse_button.pack(pady=5)
 
-        # Кнопка сохранения
-        self.save_button = ttk.Button(self, text="Сохранить", command=self.save_settings)
-        self.save_button.pack(pady=20)
+# Функция для получения доступных устройств
+def get_audio_devices():
+    p = pyaudio.PyAudio()
+    devices = []
+    for i in range(p.get_device_count()):
+        info = p.get_device_info_by_index(i)
+        devices.append((i, info['name'], info['maxInputChannels']))
+    p.terminate()
+    return devices
 
-    def get_audio_devices(self):
-        # Здесь вы можете использовать библиотеку pyaudio для получения списка доступных аудиоустройств
-        # Пример:
-        # import pyaudio
-        # p = pyaudio.PyAudio()
-        # devices = [p.get_device_info_by_index(i)['name'] for i in range(p.get_device_count())]
-        # p.terminate()
-        # return devices
-        return ["Устройство 1", "Устройство 2", "Устройство 3"]
 
-    def get_languages(self):
-        # Возвращает список доступных языков
-        return ["ru-RU", "en-US", "fr-FR", "de-DE"]
+# Функция для обновления списка устройств
+def update_device_list():
+    devices = get_audio_devices()
+    input_device_combobox['values'] = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
+    output_device_combobox['values'] = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
 
-    def browse_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")])
-        if file_path:
-            self.voice_file_var.set(file_path)
 
-    def save_settings(self):
-        settings = {
-            "input_device": self.input_device_var.get(),
-            "output_device": self.output_device_var.get(),
-            "input_language": self.input_language_var.get(),
-            "output_language": self.output_language_var.get(),
-            "voice_file": self.voice_file_var.get()
-        }
-        print("Настройки сохранены:", settings)
-        # Здесь вы можете сохранить настройки в файл или применить их непосредственно
+# Функция для сохранения настроек
+def save_settings():
+    try:
+        config['audio']['input_device_index'] = int(input_device_combobox.get().split(" (ID: ")[-1][:-1])
+        config['audio']['output_device_index'] = int(output_device_combobox.get().split(" (ID: ")[-1][:-1])
+        config['translation']['source_language'] = language_codes[source_language_entry.get()]
+        config['translation']['destination_language'] = language_codes[destination_language_entry.get()]
+        config['tts']['use_gpu'] = gpu_var.get()
+        config['tts']['gpu_accelerator'] = gpu_accelerator_entry.get()
 
-if __name__ == "__main__":
-    app = SettingsWindow()
-    app.mainloop()
+        save_config(config)
+        messagebox.showinfo("Сохранение", "Настройки успешно сохранены!")
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Не удалось сохранить настройки: {e}")
+
+
+# Загрузка конфигурации
+config = load_config()
+
+# Создание основного окна
+root = tk.Tk()
+root.title("Настройки переводчика")
+language_codes = {
+    'Русский': 'ru',
+    'Английский': 'en',
+    'Испанский': 'es',
+    'Французский': 'fr',
+    'Немецкий': 'de',
+    'Итальянский': 'it',
+    'Португальский': 'pt',
+    'Польский': 'pl',
+    'Венгерский': 'hu',
+    'Турецкий': 'tr',
+    'Голландский': 'nl',
+    'Чешский': 'cs',
+    'Арабский': 'ar',
+    'Китайский': 'zh-cn',
+    'Японский': 'ja',
+    'Корейский': 'ko',
+    'Хинди': 'hi',
+}
+
+# Создание виджетов
+ttk.Label(root, text="Выберите устройство ввода:").grid(column=0, row=0, padx=10, pady=10)
+input_device_combobox = ttk.Combobox(root)
+input_device_combobox.grid(column=1, row=0, padx=10, pady=10)
+
+ttk.Label(root, text="Выберите устройство вывода:").grid(column=0, row=1, padx=10, pady=10)
+output_device_combobox = ttk.Combobox(root)
+output_device_combobox.grid(column=1, row=1, padx=10, pady=10)
+
+# Создание виджетов
+ttk.Label(root, text="Язык источника:").grid(column=0, row=2, padx=10, pady=10)
+source_language_entry = ttk.Combobox(root, values=list(language_codes.keys()))
+source_language_entry.grid(column=1, row=2, padx=10, pady=10)
+source_language_entry.set(
+    [key for key, value in language_codes.items() if value == config['translation']['source_language']][0])
+
+ttk.Label(root, text="Язык назначения:").grid(column=0, row=3, padx=10, pady=10)
+destination_language_entry = ttk.Combobox(root, values=list(language_codes.keys()))
+destination_language_entry.grid(column=1, row=3, padx=10, pady=10)
+destination_language_entry.set(
+    [key for key, value in language_codes.items() if value == config['translation']['destination_language']][0])
+
+gpu_var = tk.BooleanVar(value=config['tts']['use_gpu'])
+gpu_checkbox = ttk.Checkbutton(root, text="Использовать GPU", variable=gpu_var)
+gpu_checkbox.grid(column=0, row=4, columnspan=2, padx=10, pady=10)
+
+ttk.Label(root, text="Ускоритель GPU:").grid(column=0, row=5, padx=10, pady=10)
+gpu_accelerator_entry = ttk.Entry(root)
+gpu_accelerator_entry.grid(column=1, row=5, padx=10, pady=10)
+gpu_accelerator_entry.insert(0, config['tts']['gpu_accelerator'])
+
+save_button = ttk.Button(root, text="Сохранить настройки", command=save_settings)
+save_button.grid(column=0, row=6, columnspan=2, padx=10, pady=10)
+
+# Обновление списка устройств
+update_device_list()
+
+# Запуск основного цикла
+root.mainloop()
