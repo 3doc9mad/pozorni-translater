@@ -2,7 +2,7 @@
     "tts": {
         "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
         "speaker_wav": "input_voices/neco-arc-1.wav",
-        "speed": 0.6,
+        "speed": 1,
         "use_gpu": false,
         "gpu_accelerator": "cuda:0"
     },

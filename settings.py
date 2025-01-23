@@ -1,23 +1,18 @@
 import json
-import tkinter as tk
-from tkinter import ttk, messagebox
-
+import dearpygui.dearpygui as dpg
 import pyaudio
 
 
-# Функция для загрузки конфигурации
 def load_config():
     with open('config.json', 'r') as config_file:
         return json.load(config_file)
 
 
-# Функция для сохранения конфигурации
 def save_config(config):
     with open('config.json', 'w') as config_file:
         json.dump(config, config_file, indent=4)
 
 
-# Функция для получения доступных устройств
 def get_audio_devices():
     p = pyaudio.PyAudio()
     devices = []
@@ -28,35 +23,70 @@ def get_audio_devices():
     return devices
 
 
-# Функция для обновления списка устройств
 def update_device_list():
     devices = get_audio_devices()
-    input_device_combobox['values'] = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
-    output_device_combobox['values'] = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
+    input_device_list = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
+    output_device_list = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
+
+    dpg.set_value("input_device_combobox", input_device_list)
+    dpg.set_value("output_device_combobox", output_device_list)
 
 
-# Функция для сохранения настроек
 def save_settings():
     try:
-        config['audio']['input_device_index'] = int(input_device_combobox.get().split(" (ID: ")[-1][:-1])
-        config['audio']['output_device_index'] = int(output_device_combobox.get().split(" (ID: ")[-1][:-1])
-        config['translation']['source_language'] = language_codes[source_language_entry.get()]
-        config['translation']['destination_language'] = language_codes[destination_language_entry.get()]
-        config['tts']['use_gpu'] = gpu_var.get()
-        config['tts']['gpu_accelerator'] = gpu_accelerator_entry.get()
+        config['audio']['input_device_index'] = int(dpg.get_value("input_device_combobox")[1])
+        config['audio']['output_device_index'] = int(dpg.get_value("output_device_combobox")[1])
+        config['translation']['source_language'] = language_codes[dpg.get_value("source_language_combobox")]
+        config['translation']['destination_language'] = language_codes[dpg.get_value("destination_language_combobox")]
+        config['tts']['use_gpu'] = dpg.get_value("gpu_checkbox")
+        config['tts']['gpu_accelerator'] = dpg.get_value("gpu_accelerator_entry")
 
         save_config(config)
-        messagebox.showinfo("Сохранение", "Настройки успешно сохранены!")
+        dpg.show_item("save_success")
     except Exception as e:
-        messagebox.showerror("Ошибка", f"Не удалось сохранить настройки: {e}")
+        dpg.show_item("save_error")
 
 
-# Загрузка конфигурации
 config = load_config()
 
-# Создание основного окна
-root = tk.Tk()
-root.title("Настройки переводчика")
+dpg.create_context()
+with dpg.font_registry():
+    with dpg.font("fonts/SegoeUI-Light.ttf", 25) as default_font:
+        dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+        dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+
+texture_names = [
+    'mic', 'mic-mute', 'mic-fill'
+]
+
+with dpg.theme() as global_theme:
+    with dpg.theme_component(dpg.mvAll):
+        dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)  # Фон окна
+        dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)  # Цвет текста
+        dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)  # Цвет границы
+        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)  # Закругление рамок
+    with dpg.theme_component(dpg.mvImageButton, enabled_state=True):
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+    with dpg.theme_component(dpg.mvCombo, enabled_state=True):
+        dpg.add_theme_color(dpg.mvSelectable, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+    with dpg.theme_component(dpg.mvImageButton, enabled_state=False):
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+
 language_codes = {
     'Русский': 'ru',
     'Английский': 'en',
@@ -78,41 +108,38 @@ language_codes = {
 }
 
 # Создание виджетов
-ttk.Label(root, text="Выберите устройство ввода:").grid(column=0, row=0, padx=10, pady=10)
-input_device_combobox = ttk.Combobox(root)
-input_device_combobox.grid(column=1, row=0, padx=10, pady=10)
+with dpg.window(label="Настройки", width=450, height=800, no_collapse=False, no_move=True, no_title_bar=True,
+                    no_resize=True, ):
+    dpg.bind_font(default_font)
+    dpg.bind_theme(global_theme)
+    dpg.add_text("Выберите устройство ввода:")
+    dpg.add_combo(label="Устройство ввода", items=get_audio_devices(), tag="input_device_combobox")
 
-ttk.Label(root, text="Выберите устройство вывода:").grid(column=0, row=1, padx=10, pady=10)
-output_device_combobox = ttk.Combobox(root)
-output_device_combobox.grid(column=1, row=1, padx=10, pady=10)
+    dpg.add_text("Выберите устройство вывода:")
+    dpg.add_combo(label="Устройство вывода", items=get_audio_devices(), tag="output_device_combobox")
 
-# Создание виджетов
-ttk.Label(root, text="Язык источника:").grid(column=0, row=2, padx=10, pady=10)
-source_language_entry = ttk.Combobox(root, values=list(language_codes.keys()))
-source_language_entry.grid(column=1, row=2, padx=10, pady=10)
-source_language_entry.set(
-    [key for key, value in language_codes.items() if value == config['translation']['source_language']][0])
+    dpg.add_text("Язык источника:")
+    dpg.add_combo(label="Язык источника", items=list(language_codes.keys()), tag="source_language_combobox")
+    dpg.set_value("source_language_combobox",
+                  [key for key, value in language_codes.items() if value == config['translation']['source_language']][
+                      0])
 
-ttk.Label(root, text="Язык назначения:").grid(column=0, row=3, padx=10, pady=10)
-destination_language_entry = ttk.Combobox(root, values=list(language_codes.keys()))
-destination_language_entry.grid(column=1, row=3, padx=10, pady=10)
-destination_language_entry.set(
-    [key for key, value in language_codes.items() if value == config['translation']['destination_language']][0])
+    dpg.add_text("Язык назначения:")
+    dpg.add_combo(label="Язык назначения", items=list(language_codes.keys()), tag="destination_language_combobox")
+    dpg.set_value("destination_language_combobox", [key for key, value in language_codes.items() if
+                                                    value == config['translation']['destination_language']][0])
 
-gpu_var = tk.BooleanVar(value=config['tts']['use_gpu'])
-gpu_checkbox = ttk.Checkbutton(root, text="Использовать GPU", variable=gpu_var)
-gpu_checkbox.grid(column=0, row=4, columnspan=2, padx=10, pady=10)
+    dpg.add_checkbox(label="Использовать GPU", tag="gpu_checkbox", default_value=config['tts']['use_gpu'])
 
-ttk.Label(root, text="Ускоритель GPU:").grid(column=0, row=5, padx=10, pady=10)
-gpu_accelerator_entry = ttk.Entry(root)
-gpu_accelerator_entry.grid(column=1, row=5, padx=10, pady=10)
-gpu_accelerator_entry.insert(0, config['tts']['gpu_accelerator'])
+    dpg.add_text("Ускоритель GPU:")
+    dpg.add_input_text(tag="gpu_accelerator_entry", default_value=config['tts']['gpu_accelerator'])
 
-save_button = ttk.Button(root, text="Сохранить настройки", command=save_settings)
-save_button.grid(column=0, row=6, columnspan=2, padx=10, pady=10)
+    dpg.add_button(label="Сохранить настройки", callback=save_settings)
+    dpg.add_text("Успешно сохранено!", tag='save_success', show=False)
+    dpg.add_text("Не сохранено сохранено!", tag='save_error', show=False)
+dpg.create_viewport(title='Автопереводчик', width=450, height=800, resizable=False)
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()
 
-# Обновление списка устройств
-update_device_list()
-
-# Запуск основного цикла
-root.mainloop()
