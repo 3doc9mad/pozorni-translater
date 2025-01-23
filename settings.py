@@ -1,87 +1,145 @@
-import tkinter as tk
-from tkinter import ttk, filedialog
+import json
+import dearpygui.dearpygui as dpg
+import pyaudio
 
-class SettingsWindow(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Настройки")
-        self.geometry("400x300")
 
-        # Входное устройство
-        self.input_device_label = ttk.Label(self, text="Входное устройство:")
-        self.input_device_label.pack(pady=5)
-        self.input_device_var = tk.StringVar()
-        self.input_device_combobox = ttk.Combobox(self, textvariable=self.input_device_var)
-        self.input_device_combobox['values'] = self.get_audio_devices()
-        self.input_device_combobox.pack(pady=5)
+def load_config():
+    with open('config.json', 'r') as config_file:
+        return json.load(config_file)
 
-        # Выходное устройство
-        self.output_device_label = ttk.Label(self, text="Выходное устройство:")
-        self.output_device_label.pack(pady=5)
-        self.output_device_var = tk.StringVar()
-        self.output_device_combobox = ttk.Combobox(self, textvariable=self.output_device_var)
-        self.output_device_combobox['values'] = self.get_audio_devices()
-        self.output_device_combobox.pack(pady=5)
 
-        # Язык ввода
-        self.input_language_label = ttk.Label(self, text="Язык ввода:")
-        self.input_language_label.pack(pady=5)
-        self.input_language_var = tk.StringVar()
-        self.input_language_combobox = ttk.Combobox(self, textvariable=self.input_language_var)
-        self.input_language_combobox['values'] = self.get_languages()
-        self.input_language_combobox.pack(pady=5)
+def save_config(config):
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file, indent=4)
 
-        # Язык вывода
-        self.output_language_label = ttk.Label(self, text="Язык вывода:")
-        self.output_language_label.pack(pady=5)
-        self.output_language_var = tk.StringVar()
-        self.output_language_combobox = ttk.Combobox(self, textvariable=self.output_language_var)
-        self.output_language_combobox['values'] = self.get_languages()
-        self.output_language_combobox.pack(pady=5)
 
-        # Файл для синтеза голоса
-        self.voice_file_label = ttk.Label(self, text="Файл для синтеза голоса:")
-        self.voice_file_label.pack(pady=5)
-        self.voice_file_var = tk.StringVar()
-        self.voice_file_entry = ttk.Entry(self, textvariable=self.voice_file_var, width=40)
-        self.voice_file_entry.pack(pady=5)
-        self.browse_button = ttk.Button(self, text="Обзор...", command=self.browse_file)
-        self.browse_button.pack(pady=5)
+def get_audio_devices():
+    p = pyaudio.PyAudio()
+    devices = []
+    for i in range(p.get_device_count()):
+        info = p.get_device_info_by_index(i)
+        devices.append((i, info['name'], info['maxInputChannels']))
+    p.terminate()
+    return devices
 
-        # Кнопка сохранения
-        self.save_button = ttk.Button(self, text="Сохранить", command=self.save_settings)
-        self.save_button.pack(pady=20)
 
-    def get_audio_devices(self):
-        # Здесь вы можете использовать библиотеку pyaudio для получения списка доступных аудиоустройств
-        # Пример:
-        # import pyaudio
-        # p = pyaudio.PyAudio()
-        # devices = [p.get_device_info_by_index(i)['name'] for i in range(p.get_device_count())]
-        # p.terminate()
-        # return devices
-        return ["Устройство 1", "Устройство 2", "Устройство 3"]
+def update_device_list():
+    devices = get_audio_devices()
+    input_device_list = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
+    output_device_list = [f"{name} (ID: {id})" for id, name, channels in devices if channels > 0]
 
-    def get_languages(self):
-        # Возвращает список доступных языков
-        return ["ru-RU", "en-US", "fr-FR", "de-DE"]
+    dpg.set_value("input_device_combobox", input_device_list)
+    dpg.set_value("output_device_combobox", output_device_list)
 
-    def browse_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")])
-        if file_path:
-            self.voice_file_var.set(file_path)
 
-    def save_settings(self):
-        settings = {
-            "input_device": self.input_device_var.get(),
-            "output_device": self.output_device_var.get(),
-            "input_language": self.input_language_var.get(),
-            "output_language": self.output_language_var.get(),
-            "voice_file": self.voice_file_var.get()
-        }
-        print("Настройки сохранены:", settings)
-        # Здесь вы можете сохранить настройки в файл или применить их непосредственно
+def save_settings():
+    try:
+        config['audio']['input_device_index'] = int(dpg.get_value("input_device_combobox")[1])
+        config['audio']['output_device_index'] = int(dpg.get_value("output_device_combobox")[1])
+        config['translation']['source_language'] = language_codes[dpg.get_value("source_language_combobox")]
+        config['translation']['destination_language'] = language_codes[dpg.get_value("destination_language_combobox")]
+        config['tts']['use_gpu'] = dpg.get_value("gpu_checkbox")
+        config['tts']['gpu_accelerator'] = dpg.get_value("gpu_accelerator_entry")
 
-if __name__ == "__main__":
-    app = SettingsWindow()
-    app.mainloop()
+        save_config(config)
+        dpg.show_item("save_success")
+    except Exception as e:
+        dpg.show_item("save_error")
+
+
+config = load_config()
+
+dpg.create_context()
+with dpg.font_registry():
+    with dpg.font("fonts/SegoeUI-Light.ttf", 25) as default_font:
+        dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+        dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+
+texture_names = [
+    'mic', 'mic-mute', 'mic-fill'
+]
+
+with dpg.theme() as global_theme:
+    with dpg.theme_component(dpg.mvAll):
+        dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)  # Фон окна
+        dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)  # Цвет текста
+        dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)  # Цвет границы
+        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)  # Закругление рамок
+    with dpg.theme_component(dpg.mvImageButton, enabled_state=True):
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+    with dpg.theme_component(dpg.mvCombo, enabled_state=True):
+        dpg.add_theme_color(dpg.mvSelectable, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+    with dpg.theme_component(dpg.mvImageButton, enabled_state=False):
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+                            category=dpg.mvThemeCat_Core)
+
+language_codes = {
+    'Русский': 'ru',
+    'Английский': 'en',
+    'Испанский': 'es',
+    'Французский': 'fr',
+    'Немецкий': 'de',
+    'Итальянский': 'it',
+    'Португальский': 'pt',
+    'Польский': 'pl',
+    'Венгерский': 'hu',
+    'Турецкий': 'tr',
+    'Голландский': 'nl',
+    'Чешский': 'cs',
+    'Арабский': 'ar',
+    'Китайский': 'zh-cn',
+    'Японский': 'ja',
+    'Корейский': 'ko',
+    'Хинди': 'hi',
+}
+
+# Создание виджетов
+with dpg.window(label="Настройки", width=450, height=800, no_collapse=False, no_move=True, no_title_bar=True,
+                    no_resize=True, ):
+    dpg.bind_font(default_font)
+    dpg.bind_theme(global_theme)
+    dpg.add_text("Выберите устройство ввода:")
+    dpg.add_combo(label="Устройство ввода", items=get_audio_devices(), tag="input_device_combobox")
+
+    dpg.add_text("Выберите устройство вывода:")
+    dpg.add_combo(label="Устройство вывода", items=get_audio_devices(), tag="output_device_combobox")
+
+    dpg.add_text("Язык источника:")
+    dpg.add_combo(label="Язык источника", items=list(language_codes.keys()), tag="source_language_combobox")
+    dpg.set_value("source_language_combobox",
+                  [key for key, value in language_codes.items() if value == config['translation']['source_language']][
+                      0])
+
+    dpg.add_text("Язык назначения:")
+    dpg.add_combo(label="Язык назначения", items=list(language_codes.keys()), tag="destination_language_combobox")
+    dpg.set_value("destination_language_combobox", [key for key, value in language_codes.items() if
+                                                    value == config['translation']['destination_language']][0])
+
+    dpg.add_checkbox(label="Использовать GPU", tag="gpu_checkbox", default_value=config['tts']['use_gpu'])
+
+    dpg.add_text("Ускоритель GPU:")
+    dpg.add_input_text(tag="gpu_accelerator_entry", default_value=config['tts']['gpu_accelerator'])
+
+    dpg.add_button(label="Сохранить настройки", callback=save_settings)
+    dpg.add_text("Успешно сохранено!", tag='save_success', show=False)
+    dpg.add_text("Не сохранено сохранено!", tag='save_error', show=False)
+dpg.create_viewport(title='Автопереводчик', width=450, height=800, resizable=False)
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()
+
