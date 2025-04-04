@@ -1,13 +1,16 @@
 import json
-
+from utils import get_config
 import dearpygui.dearpygui as dpg
 
-from process_manager import start_translation_one_thread
+from process_manager import start_translation_one_thread, start_translation_multi_thread, stop_translation_one_thread, stop_translation_multi_thread
 
 
 def start_translation_thread():
     change_button(1)
-    start_translation_one_thread()
+    if get_config()['interface']['multiprocessing']:
+        start_translation_multi_thread()
+    else:
+        start_translation_one_thread()
 
 
 def stop_translation_thread():
@@ -16,7 +19,7 @@ def stop_translation_thread():
 
 def change_button(status=0):
     if status == 0:
-        dpg.configure_item('main_button', texture_tag='mic-mute', enabled=True, callback=start_translation_thread, )
+        dpg.configure_item('main_button', texture_tag='mic-mute', enabled=True, callback=start_translation_thread,)
     if status == 1:
         dpg.configure_item('main_button', texture_tag='mic', enabled=False)
     if status == 2:

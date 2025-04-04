@@ -11,7 +11,8 @@ from translator import listen_microphone, recognize_speech, translate_speech, te
 def listen():
     microphone = sr.Microphone(device_index=config['audio']['input_device_index'])
     recognizer = sr.Recognizer()
-    audios_for_recognize.put(listen_microphone(microphone, recognizer))
+    while True:
+        audios_for_recognize.put(listen_microphone(microphone, recognizer))
 
 
 def recognize():
@@ -20,32 +21,38 @@ def recognize():
         audio = audios_for_recognize.get()
         if audio is None:
             break
-        recognize_speech(audio, recognizer)
+        text = recognize_speech(audio, recognizer)
+        text_for_translate.put(text)
+        print('text recognized')
         audios_for_recognize.task_done()
 
 
 def translate():
     translator = Translator()
+    print('translate is start')
     while True:
         text = text_for_translate.get()
+        print('get text for translate')
         if text is None:
+            print('text is none')
             break
-        translate_speech(text, translator)
+        text_for_speech.put(translate_speech(text, translator))
         text_for_translate.task_done()
 
 
 def speech():
     tts = TTS(model_name=config['tts']['model_name'], gpu=config['tts']['use_gpu'])
     tts.to(config['tts']['gpu_accelerator'] if config['tts']['use_gpu'] else 'cpu')
+    print('tts started')
     while True:
         text = text_for_speech.get()
         if text is None:
             break
-        text_to_speech(text, tts)
+        audio_paths_for_playing.put(text_to_speech(text, tts))
         text_for_speech.task_done()
 
 
-def playing(audio_paths_for_playing):
+def playing():
     while True:
         audio_path = audio_paths_for_playing.get()
         if audio_path is None:
@@ -55,7 +62,10 @@ def playing(audio_paths_for_playing):
 
 
 def start_translation_multi_thread():
-    global audios_for_recognize, text_for_translate, text_for_speech, audio_paths_for_playing
+    global audios_for_recognize
+    global text_for_translate
+    global text_for_speech
+    global audio_paths_for_playing
     audios_for_recognize = queue.Queue()
     text_for_translate = queue.Queue()
     text_for_speech = queue.Queue()
@@ -67,7 +77,6 @@ def start_translation_multi_thread():
     synthesizer_thread = threading.Thread(target=speech)
     play_thread = threading.Thread(target=playing)
 
-    recognize_thread.start()
     listener_thread.start()
     recognize_thread.start()
     translate_thread.start()
@@ -97,4 +106,9 @@ def start_translation_one_thread():
             )
         )
 
-
+def stop_translation_one_thread():
+    listener_thread.stop()
+    recognize_thread.stop()
+    translate_thread.stop()
+    synthesizer_thread.stop()
+    play_thread.stop()

@@ -5,15 +5,21 @@ import speech_recognition as sr
 from TTS.api import TTS
 from googletrans import Translator
 
-from utils import log_message, send_status, config, send_translate_text, send_recognize_text
+from utils import log_message, send_status, config, send_translate_text, send_recognize_text, id_generator
 
 
 def listen_microphone(microphone, recognizer):
     with microphone as source:
         log_message("Скажи что-нибудь...")
         send_status('listen')
-        return recognizer.listen(source)
-
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+        recognizer.pause_threshold = 2
+        recognizer.phrase_time_limit = 10
+        recognizer.dynamic_energy_threshold = True
+        try:
+            return recognizer.listen(source)
+        except Exception as e:
+            print(f"Ошибка при прослушивании микрофона: {e}")
 
 def recognize_speech(audio, recognizer):
     send_status('recognize')
@@ -41,7 +47,7 @@ def translate_speech(text, translator):
 
 def text_to_speech(text, tts):
     send_status('text_to_speech')
-    file_path = f'output/{config['recording']['wav_output_filename']}.wav'
+    file_path = f'output/{config['recording']['wav_output_filename']}{id_generator()}.wav'
     try:
         tts.tts_to_file(
             text=text,

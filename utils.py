@@ -1,4 +1,6 @@
 import json
+import random
+import string
 
 import dearpygui.dearpygui as dpg
 
@@ -45,6 +47,12 @@ with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 
+def get_config():
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+        return config
+
+
 def send_recognize_text(text):
     dpg.set_value("recognize_text", get_short_message(text))
 
@@ -68,6 +76,10 @@ def send_status(status):
     else:
         dpg.configure_item('main_button', texture_tag='mic', enabled=False)
     dpg.set_value("status_text", statuses[status] + '...')
+
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def log_message(message):

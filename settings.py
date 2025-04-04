@@ -61,10 +61,26 @@ texture_names = [
 
 with dpg.theme() as global_theme:
     with dpg.theme_component(dpg.mvAll):
-        dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)  # Фон окна
-        dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)  # Цвет текста
-        dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)  # Цвет границы
-        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)  # Закругление рамок
+        dpg.add_theme_style(dpg.mvWindowAppItem, )
+        dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)
+
+        dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)
+
+        dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (200, 200, 200), category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (185, 185, 185), category=dpg.mvThemeCat_Core)
+
+
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (200, 200, 200), category=dpg.mvThemeCat_Core)
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (185, 185, 185), category=dpg.mvThemeCat_Core)
+
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 200, 200), category=dpg.mvThemeCat_Core)
+
+        dpg.add_theme_color(dpg.mvThemeCol_PopupBg, (200, 200, 200), category=dpg.mvThemeCat_Core)
+        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)
+
+        dpg.add_theme_color(dpg.mvThemeCol_ScrollbarBg, (200, 200, 200), category=dpg.mvThemeCat_Core)
+
     with dpg.theme_component(dpg.mvImageButton, enabled_state=True):
         dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
                             category=dpg.mvThemeCat_Core)
@@ -72,13 +88,13 @@ with dpg.theme() as global_theme:
                             category=dpg.mvThemeCat_Core)
         dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
                             category=dpg.mvThemeCat_Core)
-    with dpg.theme_component(dpg.mvCombo, enabled_state=True):
-        dpg.add_theme_color(dpg.mvSelectable, (255, 255, 255),
-                            category=dpg.mvThemeCat_Core)
-        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
-                            category=dpg.mvThemeCat_Core)
-        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
-                            category=dpg.mvThemeCat_Core)
+    # with dpg.theme_component(dpg.mvCombo, enabled_state=True):
+    #     dpg.add_theme_color(dpg.mvSelectable, (255, 255, 255),
+    #                         category=dpg.mvThemeCat_Core)
+    #     dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
+    #                         category=dpg.mvThemeCat_Core)
+    #     dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
+    #                         category=dpg.mvThemeCat_Core)
     with dpg.theme_component(dpg.mvImageButton, enabled_state=False):
         dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
                             category=dpg.mvThemeCat_Core)
@@ -108,7 +124,7 @@ language_codes = {
 }
 
 # Создание виджетов
-with dpg.window(label="Настройки", width=450, height=800, no_collapse=False, no_move=True, no_title_bar=True,
+with dpg.window(label="Настройки", width=450, height=800, no_collapse=True, no_move=False, no_title_bar=False,
                     no_resize=True, ):
     dpg.bind_font(default_font)
     dpg.bind_theme(global_theme)
@@ -137,7 +153,11 @@ with dpg.window(label="Настройки", width=450, height=800, no_collapse=F
     dpg.add_button(label="Сохранить настройки", callback=save_settings)
     dpg.add_text("Успешно сохранено!", tag='save_success', show=False)
     dpg.add_text("Не сохранено сохранено!", tag='save_error', show=False)
-dpg.create_viewport(title='Автопереводчик', width=450, height=800, resizable=False)
+
+
+dpg.show_style_editor()
+
+dpg.create_viewport(title='Автопереводчик', width=450, height=800, resizable=True)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
