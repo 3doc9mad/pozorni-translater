@@ -1,32 +1,38 @@
 import json
-from utils import get_config
+
 import dearpygui.dearpygui as dpg
 
-from process_manager import start_translation_one_thread, start_translation_multi_thread, stop_translation_one_thread, stop_translation_multi_thread
+# from utils import start_translation_thread
+from process_manager import MultiThreadTranslation
 
 
-def start_translation_thread():
-    change_button(1)
-    if get_config()['interface']['multiprocessing']:
-        start_translation_multi_thread()
-    else:
-        start_translation_one_thread()
+#  from process_manager import stop_translation_one_thread, stop_translation_multi_thread
+#  ну они просто не существуют пока что
+
+#
+# def start_translation_thread():
+#     change_button(1)
+#     if get_config()['interface']['multiprocessing']:
+#         start_translation_multi_thread()
+#     else:
+#         start_translation_one_thread()
 
 
-def stop_translation_thread():
-    change_button(0)
+# def stop_translation_thread():
+#     change_button(0)
 
 
-def change_button(status=0):
-    if status == 0:
-        dpg.configure_item('main_button', texture_tag='mic-mute', enabled=True, callback=start_translation_thread,)
-    if status == 1:
-        dpg.configure_item('main_button', texture_tag='mic', enabled=False)
-    if status == 2:
-        dpg.configure_item('main_button', texture_tag='mic-fill', enabled=True, callback=stop_translation_thread)
+# def change_button(status=0):
+#     if status == 0:
+#         dpg.configure_item('main_button', texture_tag='mic-mute', enabled=True, callback=start_translation_thread, )
+#     if status == 1:
+#         dpg.configure_item('main_button', texture_tag='mic', enabled=False)
+#     if status == 2:
+#         dpg.configure_item('main_button', texture_tag='mic-fill', enabled=True, callback=stop_translation_thread)
 
 
 def window():
+    translator = MultiThreadTranslation()
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
     dpg.create_context()
@@ -36,11 +42,17 @@ def window():
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
 
     with dpg.theme() as global_theme:
+        '''
+        если есть на свете то, что я ненавижу, так это - писать темы
+        
+        куча параметров, которые зачем-то нужно указывать, не могли разве просто сделать кнопку - светлая и темная тема?
+        '''
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)  # Фон окна
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)  # Цвет текста
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)  # Цвет границы
-            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)  # Закругление рамок
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (255, 255, 255), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (11, 11, 11), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_Border, (200, 200, 200), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)
+
         with dpg.theme_component(dpg.mvImageButton, enabled_state=True):
             dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
                                 category=dpg.mvThemeCat_Core)
@@ -81,7 +93,7 @@ def window():
                 label="Начать перевод",
                 texture_tag='mic-mute',
                 tag='main_button',
-                callback=start_translation_thread,
+                callback=translator.start_translation_one_thread,
             )
             dpg.set_item_pos("main_button", [158, 250])
 
@@ -91,7 +103,7 @@ def window():
             dpg.add_text('\n\n\n', tag='recognize_text')
             dpg.add_text("Переведенный текст:", )
             dpg.add_text('\n\n\n', tag='translate_text')
-            if not config['interface']['multiprocessing']:
+            if not config['other']['multiprocessing']:
                 dpg.add_text("Статус", )
                 dpg.add_text("Выключен", tag='status_text')
 
@@ -104,4 +116,5 @@ def window():
 
 
 if __name__ == '__main__':
+
     window()

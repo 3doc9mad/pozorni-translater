@@ -1,4 +1,5 @@
 import json
+
 import dearpygui.dearpygui as dpg
 import pyaudio
 
@@ -70,7 +71,6 @@ with dpg.theme() as global_theme:
         dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (200, 200, 200), category=dpg.mvThemeCat_Core)
         dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (185, 185, 185), category=dpg.mvThemeCat_Core)
 
-
         dpg.add_theme_color(dpg.mvThemeCol_Button, (200, 200, 200), category=dpg.mvThemeCat_Core)
         dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (185, 185, 185), category=dpg.mvThemeCat_Core)
 
@@ -88,13 +88,6 @@ with dpg.theme() as global_theme:
                             category=dpg.mvThemeCat_Core)
         dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
                             category=dpg.mvThemeCat_Core)
-    # with dpg.theme_component(dpg.mvCombo, enabled_state=True):
-    #     dpg.add_theme_color(dpg.mvSelectable, (255, 255, 255),
-    #                         category=dpg.mvThemeCat_Core)
-    #     dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255),
-    #                         category=dpg.mvThemeCat_Core)
-    #     dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255),
-    #                         category=dpg.mvThemeCat_Core)
     with dpg.theme_component(dpg.mvImageButton, enabled_state=False):
         dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 255, 255),
                             category=dpg.mvThemeCat_Core)
@@ -123,9 +116,8 @@ language_codes = {
     'Хинди': 'hi',
 }
 
-# Создание виджетов
 with dpg.window(label="Настройки", width=450, height=800, no_collapse=True, no_move=False, no_title_bar=False,
-                    no_resize=True, ):
+                no_resize=True, ):
     dpg.bind_font(default_font)
     dpg.bind_theme(global_theme)
     dpg.add_text("Выберите устройство ввода:")
@@ -154,7 +146,6 @@ with dpg.window(label="Настройки", width=450, height=800, no_collapse=T
     dpg.add_text("Успешно сохранено!", tag='save_success', show=False)
     dpg.add_text("Не сохранено сохранено!", tag='save_error', show=False)
 
-
 dpg.show_style_editor()
 
 dpg.create_viewport(title='Автопереводчик', width=450, height=800, resizable=True)
@@ -162,4 +153,3 @@ dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
 dpg.destroy_context()
-
