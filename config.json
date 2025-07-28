@@ -7,8 +7,8 @@
         "gpu_accelerator": "cuda:0"
     },
     "audio": {
-        "input_device_index": 1,
-        "output_device_index": 1,
+        "input_device_index": 4,
+        "output_device_index": 4,
         "sample_rate": 44100,
         "chunk_size": 64
     },
@@ -20,7 +20,7 @@
         "source_language": "ru",
         "destination_language": "en"
     },
-    "interface": {
+    "other": {
         "multiprocessing": false,
         "debug_mode": false
     }

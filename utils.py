@@ -1,6 +1,9 @@
 import json
+import random
+import string
 
 import dearpygui.dearpygui as dpg
+
 
 
 def get_split_index(msg):
@@ -45,6 +48,12 @@ with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 
+def get_config():
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+        return config
+
+
 def send_recognize_text(text):
     dpg.set_value("recognize_text", get_short_message(text))
 
@@ -53,7 +62,7 @@ def send_translate_text(text):
     dpg.set_value("translate_text", get_short_message(str(text)))
 
 
-def send_status(status):
+def send_status(status, func=False):
     statuses = {
         'loading': 'Загрузка',
         'listen': 'Слушаю Вас',
@@ -61,13 +70,23 @@ def send_status(status):
         'translate': 'Перевожу',
         'text_to_speech': 'Синтезирую речь',
         'play_audio': 'Воспроизвожу речь',
+        'stopped': 'Остановлен'
     }
 
     if status == 'listen':
-        dpg.configure_item('main_button', texture_tag='mic-fill', enabled=True)
+        if func:
+            dpg.configure_item('main_button', texture_tag='mic-fill', enabled=True, callback=func)
+        else:
+            dpg.configure_item('main_button', texture_tag='mic-fill', enabled=True)
+    elif status == 'stopped':
+        dpg.configure_item('main_button', texture_tag='mic-mute', enabled=True, callback=func)
     else:
         dpg.configure_item('main_button', texture_tag='mic', enabled=False)
     dpg.set_value("status_text", statuses[status] + '...')
+
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def log_message(message):
