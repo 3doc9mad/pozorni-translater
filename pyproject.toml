@@ -1,7 +1,7 @@
 [project]
 name = "pozorni-translater"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.7.2"
+description = "Pozorni-translater is a cross-platform real-time speech translator supporting 17 languages, outputting audio through speakers or a virtual microphone."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
